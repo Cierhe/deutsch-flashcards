@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deutsch Flashcards</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      width: 90%;
+      max-width: 360px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.1);
+      text-align: center;
+    }
+    .flash {
+      border: 1px solid #ddd;
+      padding: 40px 20px;
+      border-radius: 12px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+    .good { background: #22c55e; color: white; }
+    .bad { background: #ef4444; color: white; }
+    .add { background: #3b82f6; color: white; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Deutsch Flashcards</h2>
+  <div class="flash" id="flash"></div>
+
+  <button class="good" onclick="mark(true)">Richtig</button>
+  <button class="bad" onclick="mark(false)">Falsch</button>
+  <button class="add" onclick="addMode()">+ Wort hinzufügen</button>
+</div>
+
+<script>
+let words = JSON.parse(localStorage.getItem("words")) || [
+  {de:"berichtet", en:"reported", box:0, last:0},
+  {de:"Abwechslung", en:"variety", box:0, last:0},
+  {de:"Zweck", en:"purpose", box:0, last:0},
+];
+
+let index = 0;
+let flipped = false;
+
+function today() {
+  return Math.floor(Date.now() / 86400000);
+}
+
+function due(w) {
+  const diff = today() - w.last;
+  if (w.box === 0) return diff >= 1;
+  if (w.box === 1) return diff >= 2;
+  return diff >= 5;
+}
+
+function currentList() {
+  return words.filter(due);
+}
+
+function show() {
+  const list = currentList();
+  if (list.length === 0) {
+    document.getElementById("flash").innerText = "Heute nichts fällig 🎉";
+    return;
+  }
+  const w = list[index % list.length];
+  document.getElementById("flash").innerText = flipped ? w.en : w.de;
+}
+
+document.getElementById("flash").onclick = () => {
+  flipped = !flipped;
+  show();
+};
+
+function mark(ok) {
+  const list = currentList();
+  if (list.length === 0) return;
+  const w = list[index % list.length];
+  w.box = ok ? Math.min(w.box + 1, 2) : 0;
+  w.last = today();
+  index++;
+  flipped = false;
+  save();
+  show();
+}
+
+function save() {
+  localStorage.setItem("words", JSON.stringify(words));
+}
+
+function addMode() {
+  const de = prompt("Deutsch:");
+  const en = prompt("Englisch:");
+  if (!de || !en) return;
+  words.unshift({de, en, box:0, last:0});
+  save();
+  show();
+}
+
+show();
+</script>
+
+</body>
+</html>
